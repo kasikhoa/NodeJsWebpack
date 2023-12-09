@@ -1,18 +1,37 @@
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const BundleAnalyzerPlugin =
+  require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 
 module.exports = (env) => {
-  const isDevelopment = process.env.NODE_ENV === 'development'
+  const basePlugins = [
+    new MiniCssExtractPlugin({
+      filename: '[name].[contenthash].css'
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Webpack App',
+      filename: 'index.html',
+      template: 'src/template.html'
+    })
+  ]
+
+  const isDevelopment = Boolean(env.development)
+  const plugins = isDevelopment
+    ? basePlugins
+    : [...basePlugins, new BundleAnalyzerPlugin()]
+
+  // const isDevelopment = process.env.NODE_ENV === 'development'
   return {
-    mode: 'development',
+    mode: isDevelopment ? 'development' : 'production',
     entry: {
       app: path.resolve('src/index.js')
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].[contenthash].js',
-      clean: true
+      clean: true,
+      assetModuleFilename: '[file]'
     },
     devtool: isDevelopment ? 'source-map' : false,
     module: {
@@ -39,19 +58,14 @@ module.exports = (env) => {
               ]
             }
           }
+        },
+        {
+          test: /\.(png|svg|jpg|jpeg|gif|pdf)$/i,
+          type: 'asset/resource'
         }
       ]
     },
-    plugins: [
-      new MiniCssExtractPlugin({
-        filename: '[name].[contenthash].css'
-      }),
-      new HtmlWebpackPlugin({
-        title: 'Webpack App',
-        filename: 'index.html',
-        template: 'src/template.html'
-      })
-    ],
+    plugins,
     devServer: {
       static: {
         directory: 'dist' // Đường dẫn tương đối đến với thư mục chứa index.html
